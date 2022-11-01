@@ -12,7 +12,6 @@
 
 <script setup lang="ts">
 import { contentChangeEmitter } from "~~/utils/emitter";
-
 const route = useRoute();
 const { pending, error, data: page, refresh } = await useAsyncData(() =>
   $fetch('/api/page', {
