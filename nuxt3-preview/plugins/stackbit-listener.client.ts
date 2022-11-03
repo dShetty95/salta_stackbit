@@ -9,3 +9,4 @@ export default defineNuxtPlugin((NuxtApp) => {
     });
   });
 });
+// contentful-server.ts set up in contentfulserver ts
