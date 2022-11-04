@@ -1,7 +1,18 @@
 stackbitVersion: ~0.5.0
-cmsName: git
 ssgName: custom
 devCommand: "npm run dev -- -p {PORT}"
+
+cmsName: contentful
+nodeVersion: '14'
+buildCommand: npm run build
+publishDir: .nuxt
+modelsSource:
+  type: contentful
+models:
+  blog:
+    type: page
+    urlPath: '/article/{slug}'
+
 experimental:
   ssg:
     name: Nuxt3
@@ -9,17 +20,4 @@ experimental:
       up: 'Local:    http'
     passthrough:  
       - '/vite-hmr/**'
-nodeVersion: "16"
-dataDir: content/data
-pagesDir: content/pages
-pageLayoutKey: type
-assets:
-  referenceType: static
-  staticDir: public
-  uploadDir: stackbitImages
-  publicPath: /
-contentModels:
-  Page:
-    isPage: true
-    urlPath: "/{slug}"
-    newFilePath: "{slug}.md"
+# nodeVersion: "16"

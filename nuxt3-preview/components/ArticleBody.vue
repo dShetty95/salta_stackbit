@@ -1,0 +1,130 @@
+<script lang="ts" setup>
+import Prism from 'prismjs'
+import { contentChangeEmitter } from "~~/utils/emitter";
+
+/**
+ * Define props
+ */
+interface Props {
+  articleId: string
+}
+const props = defineProps<Props>()
+
+// ----------------------------------------------------------------------------
+const config = useRuntimeConfig()
+
+let { data,refresh } = await useAsyncData('articleBody', async (nuxtApp) => {
+  const { $contentfulClient } = nuxtApp
+  return await $contentfulClient.getEntries({
+    content_type: config.private.CONTENTFUL_CONTENT_KEY,
+    'fields.slug[in]': props.articleId,
+    limit: 1,
+  })
+})
+
+contentChangeEmitter.on('change', () => {
+  refresh();
+})
+
+const items = data.value.items
+
+const { $assertion } = useNuxtApp()
+$assertion.assertEntries(items)
+
+const entry = items[0]
+const articleBody = entry.fields.articleBody ?? ''
+const entryHTML = useNuxtApp().$mdit.render(articleBody) || articleBody
+const metaDescription = articleBody.substring(0, 100).replace(/\r?\n/g, '').replace(/#/g, '') + '...'
+const uri = useRoute().path
+
+useHead({
+  title: entry.fields.title,
+  meta: [
+    {
+      hid: 'description',
+      name: 'description',
+      content: metaDescription,
+    },
+    { hid: 'og:type', property: 'og:type', content: 'article' },
+    { hid: 'og:title', property: 'og:title', content: entry.fields.title },
+    { hid: 'og:description', property: 'og:description', content: metaDescription },
+    { hid: 'og:url', property: 'og:url', content: `${config.public.HOST}${uri}` },
+  ],
+})
+
+onMounted(() => {
+  if (process.server) {
+    Prism.highlightAll()
+  }
+})
+
+</script>
+
+<template>
+  <div :data-sb-object-id="entry.sys.id">
+    <header class="mt-3 mb-5 px-3">
+      <h1 class="text-3xl" data-sb-field-path=".title">
+        {{ entry.fields.title }}
+      </h1>
+      <aside>
+        <ShareTo />
+      </aside>
+    </header>
+    <img data-sb-field-path=".coverArt"
+      :src="`${entry.fields.coverArt.fields.file.url}?fm=webp`"
+      :alt="entry.fields.coverArt.fields.title"
+      class="w-screen md:w-full border-round"
+    />
+    <main class="article__main m-0 p-3">
+      <section>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <article  data-sb-field-path=".articleBody" class="article__body" v-html="entryHTML"></article>
+      </section>
+      <aside>
+        <ShareTo />
+      </aside>
+    </main>
+
+  </div>
+</template>
+
+<style lang="scss">
+.article__main {
+  background-color: var(--surface-0);
+
+  header {
+    margin-bottom: 3rem;
+  }
+}
+
+.article__body {
+  h2 {
+    margin: 1.5rem 0;
+    border-style: solid;
+    border-width: 0 0 1px 0;
+    border-color: var(--bluegray-100);
+    font-size: 1.5rem; /* primeflex text-2xl */
+  }
+
+  img {
+    max-width: 100%;
+    width: 100%;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.03), 0px 0px 2px rgba(0, 0, 0, 0.06), 0px 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  blockquote {
+    border-left: 5px solid #ddd;
+    padding: 0.5em;
+  }
+
+  pre {
+    white-space: pre;
+    overflow: scroll;
+    display: block;
+
+    code {
+      width: calc(100% - 50px);
+    }
+  }
+}
+</style>
